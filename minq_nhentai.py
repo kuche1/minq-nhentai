@@ -18,7 +18,7 @@ def raw_response(url):
         page = requests.get(url)
         if page.ok:
             return page.content
-    assert 0, 'wtf'
+    assert 0, f'Failed after {MAX_RESPONSE_RETRIES} retries'
 
 def decoded_response(url):
     return raw_response(url).decode()

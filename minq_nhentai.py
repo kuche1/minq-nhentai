@@ -3,7 +3,7 @@
 import requests
 import bs4 # sudo pacman -S --needed python-beautifulsoup4
 import argparse
-
+import sys
 
 BASE_URL = 'https://nhentai.net/'
 URL_TAG_PAGE = BASE_URL + '/tag/{}/?page={}'
@@ -11,6 +11,7 @@ URL_TAG_PAGE = BASE_URL + '/tag/{}/?page={}'
 #REQUIRED_TAGS = ['/tag/drugs', 'cross']
 #REQUIRED_TAGS = ['/tag/drugs']
 
+class PageNotFoundException(Exception): pass
 
 MAX_RESPONSE_RETRIES = 20
 def raw_response(url):
@@ -18,7 +19,7 @@ def raw_response(url):
         page = requests.get(url)
         if page.ok:
             return page.content
-    assert 0, f'Failed after {MAX_RESPONSE_RETRIES} retries'
+    raise PageNotFoundException(f'Failed after {MAX_RESPONSE_RETRIES} retries: {url}')
 
 def decoded_response(url):
     return raw_response(url).decode()
@@ -67,8 +68,15 @@ def main_loop(main_tag, additional_tags):
 
         found_any_hentai = False
 
-        print(f'{page=}')
-        page, candidates = scrape_hentai_links(main_tag, page)
+        print(f'Scraping page number {page}')
+        try:
+            page, candidates = scrape_hentai_links(main_tag, page)
+        except PageNotFoundException as err:
+            if page == 1:
+                print(f'No internet OR invalid tag "{main_tag}"')
+                sys.exit(1)
+            else:
+                raise
 
         cands_left = []
         
@@ -92,8 +100,8 @@ def main_loop(main_tag, additional_tags):
 
 def main():
     parser = argparse.ArgumentParser(description="A tool to search nhentai by tags. NOTE: When searching for say 3 tags, you are searching for a hentai with ALL 3 of them, and not ANY.")
-    parser.add_argument('tag', type=str, help="The first tag desired. This has to be a legitemate tag. IE {URL_TAG_PAGE.format(YOUR_TAG, 1)} has to exist.")
-    parser.add_argument('additional_tags', nargs='*', help="Additional tags. Has to only be in the name. IE 'dress' will count as both 'chinese dress' as well as 'crossdressing'.")
+    parser.add_argument('tag', type=str, help=f"The first tag desired. This has to be a legitemate tag. IE {URL_TAG_PAGE.format('YOUR_TAG', 1)} has to exist.")
+    parser.add_argument('additional_tags', nargs='?', help="Additional tags. Has to only be in the name. IE 'dress' will count as both 'chinese dress' as well as 'crossdressing'.")
     args = parser.parse_args()
     
     tag = args.tag

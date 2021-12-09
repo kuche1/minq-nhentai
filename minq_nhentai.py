@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# TODO check for internet connection
+# TODO automatically parse tags from https://nhentai.net/tags/
+
 import requests
 import bs4 # sudo pacman -S --needed python-beautifulsoup4
 import argparse

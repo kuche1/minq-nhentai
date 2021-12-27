@@ -8,6 +8,7 @@
 # add most popular
 # add search by name
 # add search by author
+# allow running multiple instances
 # TODO MBY
 # implement normal menu mechanism
 # fetch tags from https://nhentai.net/tags/
@@ -64,7 +65,7 @@ class Hentai:
         s.artists = artists
         s.groups = groups
 
-        s.stop_downloading_pages_in_background()
+        s.stop_downloading_in_background()
 
     def __eq__(s, other):
         return s.id_ == other.id_
@@ -92,9 +93,9 @@ class Hentai:
         if os.path.isfile(done):
             os.remove(done)
 
-    def image_cache(s, url, img):
+    def image_cache(s, url, img, silent=False):
         s.image_unset_cached(img)
-        data = receive_raw(url)
+        data = receive_raw(url, silent=silent)
         with open(s.image_path(img), 'wb') as f: f.write(data)
         s.image_set_cached(img)
 
@@ -135,32 +136,34 @@ class Hentai:
                 return True
         return False
 
-    def start_downloading_pages_in_background(s):
+    def download_in_background(s):
 
         def download_all_pages():
             nonlocal s
-            for page_num in range(1, s.pages+1):
-                if s.downloading_pages_in_background == False:
-                    break
+            try:
+                for page_num in range(1, s.pages+1):
+                    if s.downloading_pages_in_background == False:
+                        break
 
-                url = URL_READ.format(id=s.id_, page=page_num)
-                data = receive(url)
+                    url = URL_READ.format(id=s.id_, page=page_num)
+                    data = receive(url, silent=True)
 
-                soup = bs4.BeautifulSoup(data, SOUP_PARSER)
-                link = soup.find(id='image-container').img['src']
-                s.image_cache(link, str(page_num))
-            s.downloading_pages_in_background = False
+                    soup = bs4.BeautifulSoup(data, SOUP_PARSER)
+                    link = soup.find(id='image-container').img['src']
+                    s.image_cache(link, str(page_num), silent=False)
+            finally:
+                s.downloading_pages_in_background = False
 
         assert s.downloading_pages_in_background == False
         s.downloading_pages_in_background = True
         threading.Thread(target=download_all_pages).start()
 
-    def stop_downloading_pages_in_background(s):
+    def stop_downloading_in_background(s):
         s.downloading_pages_in_background = False
 
     def reading_loop(s):
 
-        s.start_downloading_pages_in_background()
+        s.download_in_background()
 
         CMDS = []
         CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e', 'back', 'b'])
@@ -215,7 +218,7 @@ class Hentai:
                     print(f'->{item}')
                 alert()
 
-        s.stop_downloading_pages_in_background()
+        s.stop_downloading_in_background()
 
 class Tag:
     prefix = 'Tag'
@@ -294,13 +297,15 @@ def alert(msg=''):
     print(msg)
     input('PRESS ENTER TO CONITNUE', -1)
 
+''' TODO delete me
 def image_cache(url, id_, img_name):
     data = receive_raw(url)
     path = HENTAIS_DIR + str(id_) + '/' + img_name, 'w'
     with open(path) as f: f.write(data)
     with open(path + DONE_POSTFIX, 'w'): pass
+'''
 
-def receive_raw(url):
+def receive_raw(url, silent=False):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'}
     page = requests.get(url, headers=headers)
 
@@ -311,7 +316,7 @@ def receive_raw(url):
         case (404, 'Not Found'):
             raise Exception_net_page_not_found()
         case (429, 'Too Many Requests'):
-            print_tmp(f'Too many requests, server refused connection, retrying in {NET_TOO_MANY_REQUESTS_SLEEP} seconds')
+            if not silent: print_tmp(f'Too many requests, server refused connection, retrying in {NET_TOO_MANY_REQUESTS_SLEEP} seconds')
             time.sleep(NET_TOO_MANY_REQUESTS_SLEEP)
             return receive_raw(url)
         case _:
@@ -450,7 +455,10 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     hentais = []
     ind = 0
 
-    for hentai in scrape_hentais(url_page): # TODO what if ctrl+c is pressed here
+    # TODO
+    # what if ctrl+c is pressed here
+    # download hentai metadata in background
+    for hentai in scrape_hentais(url_page):
 
         find_new_hentai = False
 

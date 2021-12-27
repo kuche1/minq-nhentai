@@ -214,6 +214,26 @@ def does_page_exist(url):
         return False
     return True
 
+def scrape_tag_container(container):
+
+    meta = container.text.strip().replace('\n','').replace('\t','')
+
+    tag_counts = container.find(class_='tags').find_all(class_='count')
+    tags = [t.parent for t in tag_counts]
+    assert len(tag_counts) == len(tags)
+    tag_names = [t.find(class_='name').text for t in tags]
+    tag_counts = [t.find(class_='count').text for t in tags]
+
+    tag_links = []
+    for t in tags:
+        link = t['href']
+        if link.startswith('/'): link = link[1:]
+        link = URL_INDEX + link
+        tag_links.append(link)
+
+    assert len(tags) == len(tag_names) == len(tag_counts) == len(tag_links)
+    return meta, tag_names, tag_links, tag_counts
+
 def scrape_hentais(url_page):
     page_num = 0
     while True:
@@ -241,26 +261,6 @@ def scrape_hentais(url_page):
             soup = bs4.BeautifulSoup(data, SOUP_PARSER)
 
             thumb = soup.find(class_='lazyload')['data-src']
-
-            def scrape_tag_container(container):
-
-                meta = container.text.strip().replace('\n','').replace('\t','')
-
-                tag_counts = container.find(class_='tags').find_all(class_='count')
-                tags = [t.parent for t in tag_counts]
-                assert len(tag_counts) == len(tags)
-                tag_names = [t.find(class_='name').text for t in tags]
-                tag_counts = [t.find(class_='count').text for t in tags]
-
-                tag_links = []
-                for t in tags:
-                    link = t['href']
-                    if link.startswith('/'): link = link[1:]
-                    link = URL_INDEX + link
-                    tag_links.append(link)
-
-                assert len(tags) == len(tag_names) == len(tag_counts) == len(tag_links)
-                return meta, tag_names, tag_links, tag_counts
 
             containers = soup.find_all(class_='tag-container field-name') + soup.find_all(class_='tag-container field-name hidden')
 
@@ -347,7 +347,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
                 find_new_hentai = True
                 break
 
-        if not hentai.contains_language(required_language):
+        if required_language != None and not hentai.contains_language(required_language):
             find_new_hentai = True
 
         if find_new_hentai:

@@ -324,8 +324,8 @@ def receive_raw(url, silent=False):
 
     assert False
 
-def receive(url):
-    return receive_raw(url).decode()
+def receive(url, silent=False):
+    return receive_raw(url, silent=silent).decode()
 
 def does_page_exist(url):
     try:

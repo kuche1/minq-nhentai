@@ -7,6 +7,7 @@
 # automatically download hole hentai
 # cache metadata
 # typo check in menus
+# add most popular
 # TODO MBY
 # fetch tags from https://nhentai.net/tags/
 # check for internet connection

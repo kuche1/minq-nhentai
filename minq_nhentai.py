@@ -19,11 +19,16 @@ import shlex
 import subprocess
 import os
 import sys
+import io
+import time
 
 CACHE_DIR = os.path.expanduser(r'~/.cache/minq_nhentai/')
 SETTINGS_DIR = os.path.expanduser(r'~/.config/minq_nhentai/')
 HENTAIS_DIR = CACHE_DIR + r'hentai_sources/'
 
+NET_TOO_MANY_REQUESTS_SLEEP = 3
+
+URL_PAGE_POSTFIX = r'?page={page}'
 URL_INDEX = r'https://nhentai.net/'
 URL_PAGE = URL_INDEX + r'?page={page}'
 URL_READ = URL_INDEX + r'g/{id}/{page}/'
@@ -132,7 +137,7 @@ class Hentai:
         while page_num <= s.pages and page_num >= 1:
 
             if not s.image_cached(str(page_num)):
-                print('downloading...')
+                print_tmp('Downloading...')
 
                 url = URL_READ.format(id=s.id_, page=page_num)
                 data = receive(url)
@@ -179,6 +184,50 @@ def input(msg, if_interrupted):
     except KeyboardInterrupt:
         return if_interrupted
 
+_print = print
+_print_tmp_last_msg = ''
+_print_tmp_last_count = 1
+_print_tmp_last_len = 0
+# TODO multithreading
+def print(*a, **kw):
+    global _print_tmp_last_msg
+    global _print_tmp_last_count
+    global _print_tmp_last_len
+    fake_stdout = io.StringIO()
+    _print(*a, **kw, file=fake_stdout) # TODO what if file is already set
+    out = fake_stdout.getvalue()
+    l = len(out.split('\n')[0])
+    if l < _print_tmp_last_len:
+        _print(' '*_print_tmp_last_len, end='\r')
+    _print_tmp_last_msg = ''
+    _print_tmp_last_count = 1
+    _print_tmp_last_len = 0
+    _print(*a, **kw)
+def print_tmp(msg):
+    global _print_tmp_last_msg
+    global _print_tmp_last_count
+    global _print_tmp_last_len
+    assert not '\n' in msg
+
+    last_len = _print_tmp_last_len
+    _print_tmp_last_len = len(msg)
+
+    if msg == _print_tmp_last_msg:
+        _print_tmp_last_count += 1
+        _print(f'({_print_tmp_last_count}) ', end='')
+        _print_tmp_last_len += 3 + len(str(_print_tmp_last_count))
+    else:
+        _print_tmp_last_count = 1
+
+    _print_tmp_last_msg = msg
+
+    _print(msg, end='')
+    l = len(msg)
+    if last_len > l:
+        diff = last_len - l
+        _print(' '*diff, end='')
+    _print('\r', end='', flush=True)
+
 def alert(msg=''):
     print(msg)
     input('PRESS ENTER TO CONITNUE', -1)
@@ -199,6 +248,10 @@ def receive_raw(url):
     match (page.status_code, page.reason):
         case (404, 'Not Found'):
             raise Exception_net_page_not_found()
+        case (429, 'Too Many Requests'):
+            print_tmp(f'Too many requests, server refused connection, retrying in {NET_TOO_MANY_REQUESTS_SLEEP} seconds')
+            time.sleep(NET_TOO_MANY_REQUESTS_SLEEP)
+            return receive_raw(url)
         case _:
             raise Exception_net_unknown(f'{url} {page.status_code} {page.reason}')
 
@@ -322,12 +375,12 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     if len(required_tags) == 0:
         url_page = URL_INDEX
     else:
-        url_page = URL_TAG.format(tag=required_tags[0])
+        url_page = URL_TAG.format(tag=required_tags[0]) + URL_PAGE_POSTFIX
         required_tags = required_tags[1:]
 
     if required_language != None:
         if not does_page_exist(URL_LANG.format(lang=required_language)):
-            print("Language doesn't exist: {required_language}")
+            print(f"Language doesn't exist: {required_language}")
             sys.exit(1)
 
     running = True
@@ -340,18 +393,19 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
 
         for h in hentais:
             if h == hentai:
-                find_new_hentai = True
+                find_new_hentai = 'duplicate'
                 break
 
         for tag in required_tags:
             if not hentai.contains_tag(tag):
-                find_new_hentai = True
+                find_new_hentai = f'missing tag: {tag}'
                 break
 
         if required_language != None and not hentai.contains_language(required_language):
-            find_new_hentai = True
+            find_new_hentai = 'missing langiage: {required_language}'
 
         if find_new_hentai:
+            print_tmp(f'Hentai rejected (reason: {find_new_hentai}), searching for another one...')
             continue
 
         hentais.append(hentai)

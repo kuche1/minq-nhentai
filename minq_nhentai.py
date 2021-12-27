@@ -29,6 +29,7 @@ SETTINGS_DIR = os.path.expanduser(r'~/.config/minq_nhentai/')
 HENTAIS_DIR = CACHE_DIR + r'hentai_sources/'
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3
+WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2
 
 URL_PAGE_POSTFIX = r'?page={page}'
 URL_INDEX = r'https://nhentai.net/'
@@ -62,6 +63,8 @@ class Hentai:
         s.characters = characters
         s.artists = artists
         s.groups = groups
+
+        s.stop_downloading_pages_in_background()
 
     def __eq__(s, other):
         return s.id_ == other.id_
@@ -132,32 +135,53 @@ class Hentai:
                 return True
         return False
 
-    def reading_loop(s):
+    def start_downloading_pages_in_background(s):
 
-        CMDS = []
-        CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e', 'back', 'b'])
-        CMDS.append(CMD_NEXT := ['next page', 'next', 'n'])
-        CMDS.append(CMD_PREV := ['prevoius page', 'prev', 'p'])
-    
-        page_num = 1
-
-        while page_num <= s.pages and page_num >= 1:
-
-            if not s.image_cached(str(page_num)):
-                print_tmp('Downloading...')
+        def download_all_pages():
+            nonlocal s
+            for page_num in range(1, s.pages+1):
+                if s.downloading_pages_in_background == False:
+                    break
 
                 url = URL_READ.format(id=s.id_, page=page_num)
                 data = receive(url)
 
                 soup = bs4.BeautifulSoup(data, SOUP_PARSER)
                 link = soup.find(id='image-container').img['src']
-
                 s.image_cache(link, str(page_num))
+            s.downloading_pages_in_background = False
+
+        assert s.downloading_pages_in_background == False
+        s.downloading_pages_in_background = True
+        threading.Thread(target=download_all_pages).start()
+
+    def stop_downloading_pages_in_background(s):
+        s.downloading_pages_in_background = False
+
+    def reading_loop(s):
+
+        s.start_downloading_pages_in_background()
+
+        CMDS = []
+        CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e', 'back', 'b'])
+        CMDS.append(CMD_NEXT := ['next page', 'next', 'n'])
+        CMDS.append(CMD_PREV := ['prevoius page', 'prev', 'p'])
+        CMDS.append(CMD_PAGE := ['go to page', 'page', 'go to', 'goto', 'go', 'g'])
+
+        page_num = 1
+        while page_num <= s.pages and page_num >= 1:
+
+            if not s.image_cached(str(page_num)):
+                print_tmp('Downloading...')
+                try:
+                    while not s.image_cached(str(page_num)):
+                        time.sleep(WAIT_FOR_PAGE_DOWNLOAD_SLEEP)
+                except KeyboardInterrupt:
+                    break
 
             print(f'Page: {page_num} / {s.pages}')
             s.image_print(str(page_num))
 
-            # TODO download pages here
             c = input('>> ', 'q')
             if c == '':
                 c = CMD_NEXT[0]
@@ -171,12 +195,27 @@ class Hentai:
                     alert("This is the first page")
                 else:
                     page_num -= 1
+            elif c in CMD_PAGE:
+                page = input('Enter page number>> ', -1)
+                if page == -1:
+                    continue
+                try:
+                    page = int(page)
+                except ValueError:
+                    alert(f'Not a valid number: {page}')
+                    continue
+                if page < 1 or page > s.pages:
+                    alert(f'Invalid page: {page} (must be between 0 and {s.pages})')
+                    continue
+                page_num = page
             else:
                 print(f'Unknown command: {c}')
                 print('List of available commands:')
                 for item in CMDS:
                     print(f'->{item}')
                 alert()
+
+        s.stop_downloading_pages_in_background()
 
 class Tag:
     prefix = 'Tag'
@@ -411,7 +450,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     hentais = []
     ind = 0
 
-    for hentai in scrape_hentais(url_page):
+    for hentai in scrape_hentais(url_page): # TODO what if ctrl+c is pressed here
 
         find_new_hentai = False
 

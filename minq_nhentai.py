@@ -205,7 +205,6 @@ _print_tmp_last_msg = ''
 _print_tmp_last_count = 1
 _print_tmp_last_len = 0
 _print_tmp_lock = threading.Lock()
-# TODO multithreading
 def print(*a, **kw):
     _print_tmp_lock.acquire()
     global _print_tmp_last_msg

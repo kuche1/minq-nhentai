@@ -22,6 +22,7 @@ import os
 import sys
 import io
 import time
+import threading
 
 CACHE_DIR = os.path.expanduser(r'~/.cache/minq_nhentai/')
 SETTINGS_DIR = os.path.expanduser(r'~/.config/minq_nhentai/')
@@ -203,13 +204,17 @@ _print = print
 _print_tmp_last_msg = ''
 _print_tmp_last_count = 1
 _print_tmp_last_len = 0
+_print_tmp_lock = threading.Lock()
 # TODO multithreading
 def print(*a, **kw):
+    _print_tmp_lock.acquire()
     global _print_tmp_last_msg
     global _print_tmp_last_count
     global _print_tmp_last_len
     fake_stdout = io.StringIO()
-    _print(*a, **kw, file=fake_stdout) # TODO what if file is already set
+    file_bak = kw['file'] if 'file' in kw else None
+    _print(*a, **kw, file=fake_stdout)
+    if file_bak != None: kw['file'] = file_bak
     out = fake_stdout.getvalue()
     l = len(out.split('\n')[0])
     if l < _print_tmp_last_len:
@@ -218,7 +223,9 @@ def print(*a, **kw):
     _print_tmp_last_count = 1
     _print_tmp_last_len = 0
     _print(*a, **kw)
+    _print_tmp_lock.release()
 def print_tmp(msg):
+    _print_tmp_lock.acquire()
     global _print_tmp_last_msg
     global _print_tmp_last_count
     global _print_tmp_last_len
@@ -242,6 +249,8 @@ def print_tmp(msg):
         diff = last_len - l
         _print(' '*diff, end='')
     _print('\r', end='', flush=True)
+
+    _print_tmp_lock.release()
 
 def alert(msg=''):
     print(msg)

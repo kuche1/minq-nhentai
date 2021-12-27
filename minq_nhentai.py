@@ -131,6 +131,11 @@ class Hentai:
         return False
 
     def reading_loop(s):
+
+        CMDS = []
+        CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e', 'back', 'b'])
+        CMDS.append(CMD_NEXT := ['next page', 'next', 'n'])
+        CMDS.append(CMD_PREV := ['prevoius page', 'prev', 'p'])
     
         page_num = 1
 
@@ -152,15 +157,24 @@ class Hentai:
 
             # TODO download pages here
             c = input('>> ', 'q')
+            if c == '':
+                c = CMD_NEXT[0]
 
-            if c in ['', 'n']:
-                page_num += 1
-            elif c == 'p':
-                page_num -= 1
-            elif c == 'q':
+            if c in CMD_QUIT:
                 break
+            elif c in CMD_NEXT:
+                page_num += 1
+            elif c in CMD_PREV:
+                if page_num == 1:
+                    alert("This is the first page")
+                else:
+                    page_num -= 1
             else:
-                alert(f'Unknown command: {c}')
+                print(f'Unknown command: {c}')
+                print('List of available commands:')
+                for item in CMDS:
+                    print(f'->{item}')
+                alert()
 
 class Tag:
     prefix = 'Tag'

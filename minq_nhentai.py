@@ -473,7 +473,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
                 break
 
         if required_language != None and not hentai.contains_language(required_language):
-            find_new_hentai = 'missing langiage: {required_language}'
+            find_new_hentai = f'missing langiage: {required_language}'
 
         if find_new_hentai:
             print_tmp(f'Hentai rejected (reason: {find_new_hentai}), searching for another one...')

@@ -312,6 +312,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     CMDS.append(CMD_READ := ['read hentai', 'read', 'enjoy', 'cum', 'wank', 'sex'])
 
     assert type(required_tags) in (list, tuple)
+    assert type(required_language) in (str, type(None))
 
     for tag in required_tags:
         if not does_page_exist(URL_TAG.format(tag=tag)):
@@ -321,7 +322,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     if len(required_tags) == 0:
         url_page = URL_INDEX
     else:
-        url_page =required_tags[0]
+        url_page = URL_TAG.format(tag=required_tags[0])
         required_tags = required_tags[1:]
 
     if required_language != None:

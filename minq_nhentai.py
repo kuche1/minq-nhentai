@@ -1,14 +1,15 @@
 #! /usr/bin/env python3
 
 # TODO
-# implement caching
-# implement normal menu mechanism
 # include recommended hentai
 # automatically download hole hentai
 # cache metadata
 # typo check in menus
 # add most popular
+# add search by name
+# add search by author
 # TODO MBY
+# implement normal menu mechanism
 # fetch tags from https://nhentai.net/tags/
 # check for internet connection
 

@@ -1,15 +1,15 @@
 #! /usr/bin/env python3
 
 # TODO
-# check for internet connection
-# fetch tags from https://nhentai.net/tags/
 # implement caching
 # implement normal menu mechanism
-# use viu [update PKGBUILD]
 # include recommended hentai
 # automatically download hole hentai
 # cache metadata
 # typo check in menus
+# TODO MBY
+# fetch tags from https://nhentai.net/tags/
+# check for internet connection
 
 import argparse
 import requests
@@ -23,6 +23,7 @@ URL_INDEX = r'https://nhentai.net/'
 URL_PAGE = URL_INDEX + r'?page={page}'
 URL_READ = URL_INDEX + r'g/{id}/{page}/'
 URL_TAG = URL_INDEX + r'tag/{tag}/'
+URL_LANG = URL_INDEX + r'language/{lang}/'
 
 CACHE_DIR = os.path.expanduser(r'~/.cache/minq_nhentai/')
 SETTINGS_DIR = os.path.expanduser(r'~/.config/minq_nhentai/')
@@ -118,6 +119,12 @@ class Hentai:
                 return True
         return False
 
+    def contains_language(s, lang):
+        for l in s.languages:
+            if lang == l.name:
+                return True
+        return False
+
     def reading_loop(s):
     
         page_num = 1
@@ -199,8 +206,7 @@ def receive_raw(url):
 def receive(url):
     return receive_raw(url).decode()
 
-def does_tag_exist(tag):
-    url = URL_TAG.format(tag=tag)
+def does_page_exist(url):
     try:
         receive(url)
     except Exception_page_not_found:
@@ -220,7 +226,10 @@ def scrape_hentais(url_page):
         container = soup.find(class_='container index-container')
 
         for hentai in container.find_all(class_='cover'):
-            link = URL_INDEX + hentai['href']
+            link = hentai['href']
+            if link.endswith('/'): link = link[1:]
+            link = URL_INDEX + link
+
             thumb_smol = hentai.find(class_='lazyload')['data-src']
             title = hentai.find(class_='caption').text
 
@@ -241,7 +250,13 @@ def scrape_hentais(url_page):
                 assert len(tag_counts) == len(tags)
                 tag_names = [t.find(class_='name').text for t in tags]
                 tag_counts = [t.find(class_='count').text for t in tags]
-                tag_links = [URL_INDEX + t['href'] for t in tags]
+
+                tag_links = []
+                for t in tags:
+                    link = t['href']
+                    if link.startswith('/'): link = link[1:]
+                    link = URL_INDEX + link
+                    tag_links.append(link)
 
                 assert len(tags) == len(tag_names) == len(tag_counts) == len(tag_links)
                 return meta, tag_names, tag_links, tag_counts
@@ -287,27 +302,31 @@ def scrape_hentais(url_page):
 
             yield Hentai(id_, title, link, thumb, tags, languages, categories, pages, uploaded, parodies, characters, artists, groups)
 
-def interactive_hentai_enjoyment(required_tags):
+def interactive_hentai_enjoyment(required_tags, required_language=None):
 
     CMDS = []
     CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
     CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n'])
     CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
     CMDS.append(CMD_READ := ['read hentai', 'read', 'enjoy', 'cum', 'wank', 'sex'])
-    CMDS.append(CMD_TAG := ['filter by tags', 'tags', 'tag'])
 
     assert type(required_tags) in (list, tuple)
 
     for tag in required_tags:
-        if not does_tag_exist(tag):
+        if not does_page_exist(URL_TAG.format(tag=tag)):
             print(f"Tag doesn't exist: {tag}")
             sys.exit(1)
 
     if len(required_tags) == 0:
         url_page = URL_INDEX
     else:
-        url_page = URL_TAG.format(tag=required_tags[0])
+        url_page =required_tags[0]
         required_tags = required_tags[1:]
+
+    if required_language != None:
+        if not does_page_exist(URL_LANG.format(lang=required_language)):
+            print("Language doesn't exist: {required_language}")
+            sys.exit(1)
 
     running = True
     hentais = []
@@ -326,6 +345,9 @@ def interactive_hentai_enjoyment(required_tags):
             if not hentai.contains_tag(tag):
                 find_new_hentai = True
                 break
+
+        if not hentai.contains_language(required_language):
+            find_new_hentai = True
 
         if find_new_hentai:
             continue
@@ -354,25 +376,6 @@ def interactive_hentai_enjoyment(required_tags):
                 ind -= 1
             elif c in CMD_READ:
                 hentai.reading_loop()
-            elif c in CMD_TAG:
-                tags = []
-                doit = True
-                while doit:
-                    tag = input('Enter tag>> ', -1)
-                    if tag == -1:
-                        doit = False
-                        continue
-                    if tag == '':
-                        break
-                    if not does_tag_exist(tag):
-                        alert(f"Tag doesn't exist: {tag}")
-                        continue
-                    tags.append(tag)
-                else:
-                    continue
-                if len(tags) == 0:
-                    alert('Warning: No tags specified')
-                return interactive_hentai_enjoyment(tags)
             
             else:
                 print(f'Unknown command: {c}')
@@ -387,11 +390,16 @@ def interactive_hentai_enjoyment(required_tags):
 def main():
     parser = argparse.ArgumentParser(description='Command line port of nhentai')
     parser.add_argument('--tags', nargs='+', help='Tags required for the hentai', default=[])
+    parser.add_argument('--language', help='Tags required for the hentai')
     args = parser.parse_args()
 
-    tags = args.tags
+    call_args = []
 
-    interactive_hentai_enjoyment(tags)
+    call_args.append(args.tags)
+    if args.language != None:
+        call_args.append(args.language)
+
+    interactive_hentai_enjoyment(*call_args)
 
 if __name__ == '__main__':
     main()

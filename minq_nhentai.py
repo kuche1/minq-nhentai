@@ -20,26 +20,25 @@ import subprocess
 import os
 import sys
 
+CACHE_DIR = os.path.expanduser(r'~/.cache/minq_nhentai/')
+SETTINGS_DIR = os.path.expanduser(r'~/.config/minq_nhentai/')
+HENTAIS_DIR = CACHE_DIR + r'hentai_sources/'
+
 URL_INDEX = r'https://nhentai.net/'
 URL_PAGE = URL_INDEX + r'?page={page}'
 URL_READ = URL_INDEX + r'g/{id}/{page}/'
 URL_TAG = URL_INDEX + r'tag/{tag}/'
 URL_LANG = URL_INDEX + r'language/{lang}/'
 
-CACHE_DIR = os.path.expanduser(r'~/.cache/minq_nhentai/')
-SETTINGS_DIR = os.path.expanduser(r'~/.config/minq_nhentai/')
-HENTAIS_DIR = CACHE_DIR + r'hentai_sources/'
-
 SOUP_PARSER = 'lxml'
-NET_MAX_RETRIES = 20
 
 THUMB_NAME = 'thumb'
 DONE_POSTFIX = '.done'
 
 class PageNotFoundException(Exception): pass
 
-class Exception_page_not_found(Exception): pass
-class Exception_page_unknown_error(Exception): pass
+class Exception_net_page_not_found(Exception): pass
+class Exception_net_unknown(Exception): pass
 
 class Hentai:
     def __init__(s, id_, title, link, thumb, tags, languages, categories, pages, uploaded, parodies, characters, artists, groups):
@@ -191,17 +190,18 @@ def image_cache(url, id_, img_name):
     with open(path + DONE_POSTFIX, 'w'): pass
 
 def receive_raw(url):
-    for _ in range(NET_MAX_RETRIES):
-        page = requests.get(url)
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'}
+    page = requests.get(url, headers=headers)
 
-        if page.ok:
-            return page.content
+    if page.ok:
+        return page.content
 
-        match (page.status_code, page.reason):
-            case (404, 'Not Found'):
-                raise Exception_page_not_found()
-            case _:
-                raise Exception_page_unknown_error(f'{url} {page.status_code} {page.reason}')
+    match (page.status_code, page.reason):
+        case (404, 'Not Found'):
+            raise Exception_net_page_not_found()
+        case _:
+            raise Exception_net_unknown(f'{url} {page.status_code} {page.reason}')
+
     assert False
 
 def receive(url):
@@ -210,7 +210,7 @@ def receive(url):
 def does_page_exist(url):
     try:
         receive(url)
-    except Exception_page_not_found:
+    except Exception_net_page_not_found:
         return False
     return True
 

@@ -329,8 +329,9 @@ def scrape_hentais(url_page):
 
             thumb = soup.find(class_='lazyload')['data-src']
 
-            containers = soup.find_all(class_='tag-container field-name') + soup.find_all(class_='tag-container field-name hidden')
+            more_like_this = soup.find(id='related-container') # TODO unfinished
 
+            containers = soup.find_all(class_='tag-container field-name') + soup.find_all(class_='tag-container field-name hidden')
             tags = []
             languages = []
             categories = []

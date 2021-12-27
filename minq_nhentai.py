@@ -378,7 +378,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
     CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n'])
     CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
-    CMDS.append(CMD_READ := ['read hentai', 'read', 'enjoy', 'cum', 'wank', 'sex'])
+    CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
 
     assert type(required_tags) in (list, tuple)
     assert type(required_language) in (str, type(None))

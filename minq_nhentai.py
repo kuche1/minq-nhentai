@@ -67,7 +67,7 @@ class Hentai:
         s.stop_downloading_in_background()
 
     def __eq__(s, other):
-        if other == None:
+        if type(s) != type(other):
             return False
         return s.id_ == other.id_
 
@@ -360,7 +360,7 @@ def scrape_hentais(url_page):
         container = soup.find(class_='container index-container')
         hentais_in_container = container.find_all(class_='cover')
         if len(hentais_in_container) == 0:
-            return None
+            while True: yield
 
         for hentai in hentais_in_container:
             link = hentai['href']

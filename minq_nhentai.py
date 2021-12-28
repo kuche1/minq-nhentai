@@ -8,6 +8,7 @@
 # add most popular
 # add search by name
 # allow running multiple instances
+# add hentai blacklist
 # TODO MBY
 # implement normal menu mechanism
 # fetch tags from https://nhentai.net/tags/
@@ -43,8 +44,6 @@ SOUP_PARSER = 'lxml'
 
 THUMB_NAME = 'thumb'
 DONE_POSTFIX = '.done'
-
-class PageNotFoundException(Exception): pass
 
 class Exception_net_page_not_found(Exception): pass
 class Exception_net_unknown(Exception): pass
@@ -359,7 +358,7 @@ def scrape_hentais(url_page):
         container = soup.find(class_='container index-container')
         hentais_in_container = container.find_all(class_='cover')
         if len(hentais_in_container) == 0:
-            return
+            return None
 
         for hentai in hentais_in_container:
             link = hentai['href']
@@ -485,31 +484,36 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
     # download hentai metadata in background
     for hentai in scrape_hentais(url_page):
 
-        find_new_hentai = False
+        if hentai == None:
+            alert('This was the last hentai')
+            ind = len(hentais)-1
+        else:
 
-        for h in hentais:
-            if h == hentai:
-                find_new_hentai = 'duplicate'
-                break
+            find_new_hentai = False
 
-        if required_artist != None:
-            if not hentai.contains_artist(required_artist):
-                find_new_hentai = f'missing artist: {required_artist}'
+            for h in hentais:
+                if h == hentai:
+                    find_new_hentai = 'duplicate'
+                    break
 
-        for tag in required_tags:
-            if not hentai.contains_tag(tag):
-                find_new_hentai = f'missing tag: {tag}'
-                break
+            if required_artist != None:
+                if not hentai.contains_artist(required_artist):
+                    find_new_hentai = f'missing artist: {required_artist}'
 
-        if required_language != None:
-            if not hentai.contains_language(required_language):
-                find_new_hentai = f'missing langiage: {required_language}'
+            for tag in required_tags:
+                if not hentai.contains_tag(tag):
+                    find_new_hentai = f'missing tag: {tag}'
+                    break
 
-        if find_new_hentai:
-            print_tmp(f'Hentai rejected (reason: {find_new_hentai}), searching for another one...')
-            continue
+            if required_language != None:
+                if not hentai.contains_language(required_language):
+                    find_new_hentai = f'missing langiage: {required_language}'
 
-        hentais.append(hentai)
+            if find_new_hentai:
+                print_tmp(f'Hentai rejected (reason: {find_new_hentai}), searching for another one...')
+                continue
+
+            hentais.append(hentai)
 
         while running:
 

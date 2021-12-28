@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+\#! /usr/bin/env python3
 
 # TODO
 # include recommended hentai
@@ -67,6 +67,8 @@ class Hentai:
         s.stop_downloading_in_background()
 
     def __eq__(s, other):
+        if type(other) == None:
+            return False
         return s.id_ == other.id_
 
     def image_path(s, img):

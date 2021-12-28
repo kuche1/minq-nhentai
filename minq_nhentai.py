@@ -7,7 +7,6 @@
 # typo check in menus
 # add most popular
 # add search by name
-# add search by author
 # allow running multiple instances
 # TODO MBY
 # implement normal menu mechanism
@@ -38,6 +37,7 @@ URL_PAGE = URL_INDEX + r'?page={page}'
 URL_READ = URL_INDEX + r'g/{id}/{page}/'
 URL_TAG = URL_INDEX + r'tag/{tag}/'
 URL_LANG = URL_INDEX + r'language/{lang}/'
+URL_ARTIST = URL_INDEX + r'artist/{artist}/'
 
 SOUP_PARSER = 'lxml'
 
@@ -297,14 +297,6 @@ def alert(msg=''):
     print(msg)
     input('PRESS ENTER TO CONITNUE', -1)
 
-''' TODO delete me
-def image_cache(url, id_, img_name):
-    data = receive_raw(url)
-    path = HENTAIS_DIR + str(id_) + '/' + img_name, 'w'
-    with open(path) as f: f.write(data)
-    with open(path + DONE_POSTFIX, 'w'): pass
-'''
-
 def receive_raw(url, silent=False):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'}
     page = requests.get(url, headers=headers)
@@ -365,8 +357,11 @@ def scrape_hentais(url_page):
         soup = bs4.BeautifulSoup(data, SOUP_PARSER)
 
         container = soup.find(class_='container index-container')
+        hentais_in_container = container.find_all(class_='cover')
+        if len(hentais_in_container) == 0:
+            return
 
-        for hentai in container.find_all(class_='cover'):
+        for hentai in hentais_in_container:
             link = hentai['href']
             if link.endswith('/'): link = link[1:]
             link = URL_INDEX + link
@@ -424,7 +419,7 @@ def scrape_hentais(url_page):
 
             yield Hentai(id_, title, link, thumb, tags, languages, categories, pages, uploaded, parodies, characters, artists, groups)
 
-def interactive_hentai_enjoyment(required_tags, required_language=None):
+def interactive_hentai_enjoyment(required_tags, required_language=None, required_artist=None):
 
     CMDS = []
     CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
@@ -435,21 +430,51 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
     assert type(required_tags) in (list, tuple)
     assert type(required_language) in (str, type(None))
 
+    ## filtering
+
+    url_page = None
+
+    # artist
+
+    if required_artist != None:
+        if not does_page_exist(URL_ARTIST.format(artist=required_artist)):
+            print(f"Artist doesn't exist: {required_artist}")
+            sys.exit(1)
+
+        if url_page == None:
+            url_page = URL_ARTIST.format(artist=required_artist) + URL_PAGE_POSTFIX
+            required_artist = None
+
+    # tags
+
     for tag in required_tags:
         if not does_page_exist(URL_TAG.format(tag=tag)):
             print(f"Tag doesn't exist: {tag}")
             sys.exit(1)
 
-    if len(required_tags) == 0:
-        url_page = URL_INDEX
-    else:
-        url_page = URL_TAG.format(tag=required_tags[0]) + URL_PAGE_POSTFIX
-        required_tags = required_tags[1:]
+    if url_page == None:
+        if len(required_tags) != 0:
+            # TODO select the tag with the least popularity
+            url_page = URL_TAG.format(tag=required_tags[0]) + URL_PAGE_POSTFIX
+            required_tags = required_tags[1:]
+
+    # lang
 
     if required_language != None:
         if not does_page_exist(URL_LANG.format(lang=required_language)):
             print(f"Language doesn't exist: {required_language}")
             sys.exit(1)
+
+        if url_page == None:
+            url_page = URL_LANG.format(lang=required_language) + URL_PAGE_POSTFIX
+            required_language = None
+
+    # if no filters
+
+    if url_page == None:
+        url_page = URL_INDEX
+
+    ## else
 
     running = True
     hentais = []
@@ -467,13 +492,18 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
                 find_new_hentai = 'duplicate'
                 break
 
+        if required_artist != None:
+            if not hentai.contains_artist(required_artist):
+                find_new_hentai = f'missing artist: {required_artist}'
+
         for tag in required_tags:
             if not hentai.contains_tag(tag):
                 find_new_hentai = f'missing tag: {tag}'
                 break
 
-        if required_language != None and not hentai.contains_language(required_language):
-            find_new_hentai = f'missing langiage: {required_language}'
+        if required_language != None:
+            if not hentai.contains_language(required_language):
+                find_new_hentai = f'missing langiage: {required_language}'
 
         if find_new_hentai:
             print_tmp(f'Hentai rejected (reason: {find_new_hentai}), searching for another one...')
@@ -517,14 +547,14 @@ def interactive_hentai_enjoyment(required_tags, required_language=None):
 def main():
     parser = argparse.ArgumentParser(description='Command line port of nhentai')
     parser.add_argument('--tags', nargs='+', help='Tags required for the hentai', default=[])
-    parser.add_argument('--language', help='Tags required for the hentai')
+    parser.add_argument('--language', help='Language required for the hentai')
+    parser.add_argument('--artist', help='Artist required for the hentai')
     args = parser.parse_args()
 
     call_args = []
-
     call_args.append(args.tags)
-    if args.language != None:
-        call_args.append(args.language)
+    call_args.append(args.language)
+    call_args.append(args.artist)
 
     interactive_hentai_enjoyment(*call_args)
 

@@ -67,7 +67,7 @@ class Hentai:
         s.stop_downloading_in_background()
 
     def __eq__(s, other):
-        if type(other) == None:
+        if other == None:
             return False
         return s.id_ == other.id_
 

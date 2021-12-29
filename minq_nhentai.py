@@ -32,9 +32,9 @@ HENTAIS_DIR = CACHE_DIR + r'hentai_sources/'
 NET_TOO_MANY_REQUESTS_SLEEP = 3
 WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2
 
-URL_PAGE_POSTFIX = r'?page={page}'
+URL_PAGE_POSTFIX = r'page={page}'
 URL_INDEX = r'https://nhentai.net/'
-URL_PAGE = URL_INDEX + r'?page={page}'
+URL_SEARCH = URL_INDEX + r'search/?q={search}'
 URL_READ = URL_INDEX + r'g/{id}/{page}/'
 URL_TAG = URL_INDEX + r'tag/{tag}/'
 URL_LANG = URL_INDEX + r'language/{lang}/'
@@ -420,7 +420,7 @@ def scrape_hentais(url_page):
 
             yield Hentai(id_, title, link, thumb, tags, languages, categories, pages, uploaded, parodies, characters, artists, groups)
 
-def interactive_hentai_enjoyment(required_tags, required_language=None, required_artist=None):
+def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_language=None, required_artist=None):
 
     CMDS = []
     CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
@@ -435,6 +435,12 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
 
     url_page = None
 
+    # search
+
+    if search_term != None:
+        assert url_page == None
+        url_page = URL_SEARCH.format(search=search_term)
+
     # artist
 
     if required_artist != None:
@@ -443,7 +449,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
             sys.exit(1)
 
         if url_page == None:
-            url_page = URL_ARTIST.format(artist=required_artist) + URL_PAGE_POSTFIX
+            url_page = URL_ARTIST.format(artist=required_artist)
             required_artist = None
 
     # tags
@@ -456,7 +462,7 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
     if url_page == None:
         if len(required_tags) != 0:
             # TODO select the tag with the least popularity
-            url_page = URL_TAG.format(tag=required_tags[0]) + URL_PAGE_POSTFIX
+            url_page = URL_TAG.format(tag=required_tags[0])
             required_tags = required_tags[1:]
 
     # lang
@@ -467,13 +473,19 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
             sys.exit(1)
 
         if url_page == None:
-            url_page = URL_LANG.format(lang=required_language) + URL_PAGE_POSTFIX
+            url_page = URL_LANG.format(lang=required_language)
             required_language = None
 
     # if no filters
 
     if url_page == None:
         url_page = URL_INDEX
+
+    # TODO this is not perfect
+    if '?' in url_page: url_page += '&'
+    else: url_page += '?'
+
+    url_page += URL_PAGE_POSTFIX
 
     ## else
 
@@ -487,7 +499,11 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
     for hentai in scrape_hentais(url_page):
 
         if hentai == None:
-            alert('This was the last hentai')
+            if len(hentais) == 0:
+                alert('No hentais with the specified parameters')
+                break
+            else:
+                alert('This was the last hentai')
             ind = len(hentais)-1
         else:
 
@@ -552,12 +568,14 @@ def interactive_hentai_enjoyment(required_tags, required_language=None, required
             
 def main():
     parser = argparse.ArgumentParser(description='Command line port of nhentai')
+    parser.add_argument('--search', help='String to search for')
     parser.add_argument('--tags', nargs='+', help='Tags required for the hentai', default=[])
     parser.add_argument('--language', help='Language required for the hentai')
     parser.add_argument('--artist', help='Artist required for the hentai')
     args = parser.parse_args()
 
     call_args = []
+    call_args.append(args.search)
     call_args.append(args.tags)
     call_args.append(args.language)
     call_args.append(args.artist)

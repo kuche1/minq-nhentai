@@ -167,14 +167,10 @@ class Hentai:
         s.download_in_background()
 
         CMDS = []
-        CMD_QUIT = ['quit', 'q', 'exit', 'e', 'back', 'b']
-        CMDS.append(CMD_QUIT)
-        CMD_NEXT = ['next page', 'next', 'n']
-        CMDS.append(CMD_NEXT)
-        CMD_PREV = ['prevoius page', 'prev', 'p']
-        CMDS.append(CMD_PREV)
-        CMD_PAGE = ['go to page', 'page', 'go to', 'goto', 'go', 'g']
-        CMDS.append(CMD_PAGE)
+        CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e', 'back', 'b'])
+        CMDS.append(CMD_NEXT := ['next page', 'next', 'n'])
+        CMDS.append(CMD_PREV := ['prevoius page', 'prev', 'p'])
+        CMDS.append(CMD_PAGE := ['go to page', 'page', 'go to', 'goto', 'go', 'g'])
 
         page_num = 1
         while page_num <= s.pages and page_num >= 1:
@@ -308,7 +304,7 @@ def receive_raw(url, silent=False):
 
     if page.ok:
         return page.content
-    ''' sadly, this works in python>=3.10
+
     match (page.status_code, page.reason):
         case (404, 'Not Found'):
             raise Exception_net_page_not_found()
@@ -318,16 +314,6 @@ def receive_raw(url, silent=False):
             return receive_raw(url)
         case _:
             raise Exception_net_unknown(f'{url} {page.status_code} {page.reason}')
-    '''
-    sex = (page.status_code, page.reason)
-    if sex == (404, 'Not Found'):
-        raise Exception_net_page_not_found()
-    elif sex == (429, 'Too Many Requests'):
-        if not silent: print_tmp(f'Too many requests, server refused connection, retrying in {NET_TOO_MANY_REQUESTS_SLEEP} seconds')
-        time.sleep(NET_TOO_MANY_REQUESTS_SLEEP)
-        return receive_raw(url)
-    else:
-        raise Exception_net_unknown(f'{url} {page.status_code} {page.reason}')
 
     assert False
 
@@ -437,14 +423,10 @@ def scrape_hentais(url_page):
 def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_language=None, required_artist=None):
 
     CMDS = []
-    CMD_QUIT = ['quit', 'q', 'exit', 'e']
-    CMDS.append(CMD_QUIT)
-    CMD_NEXT = ['next hentai', 'next', 'n']
-    CMDS.append(CMD_NEXT)
-    CMD_PREV = ['previous hentai', 'previous', 'prev', 'p']
-    CMDS.append(CMD_PREV)
-    CMD_READ = ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex']
-    CMDS.append(CMD_READ)
+    CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
+    CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n'])
+    CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
+    CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
 
     assert type(required_tags) in (list, tuple)
     assert type(required_language) in (str, type(None))

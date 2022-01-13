@@ -437,13 +437,13 @@ def scrape_hentais(url_page):
 def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_language=None, required_artist=None):
 
     CMDS = []
-    CMD_QUIT := ['quit', 'q', 'exit', 'e']
+    CMD_QUIT = ['quit', 'q', 'exit', 'e']
     CMDS.append(CMD_QUIT)
-    CMD_NEXT := ['next hentai', 'next', 'n']
+    CMD_NEXT = ['next hentai', 'next', 'n']
     CMDS.append(CMD_NEXT)
-    CMD_PREV := ['previous hentai', 'previous', 'prev', 'p']
+    CMD_PREV = ['previous hentai', 'previous', 'prev', 'p']
     CMDS.append(CMD_PREV)
-    CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex']
+    CMD_READ = ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex']
     CMDS.append(CMD_READ)
 
     assert type(required_tags) in (list, tuple)

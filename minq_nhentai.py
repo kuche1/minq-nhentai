@@ -167,10 +167,14 @@ class Hentai:
         s.download_in_background()
 
         CMDS = []
-        CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e', 'back', 'b'])
-        CMDS.append(CMD_NEXT := ['next page', 'next', 'n'])
-        CMDS.append(CMD_PREV := ['prevoius page', 'prev', 'p'])
-        CMDS.append(CMD_PAGE := ['go to page', 'page', 'go to', 'goto', 'go', 'g'])
+        CMD_QUIT = ['quit', 'q', 'exit', 'e', 'back', 'b']
+        CMDS.append(CMD_QUIT)
+        CMD_NEXT = ['next page', 'next', 'n']
+        CMDS.append(CMD_NEXT)
+        CMD_PREV = ['prevoius page', 'prev', 'p']
+        CMDS.append(CMD_PREV)
+        CMD_PAGE = ['go to page', 'page', 'go to', 'goto', 'go', 'g']
+        CMDS.append(CMD_PAGE)
 
         page_num = 1
         while page_num <= s.pages and page_num >= 1:

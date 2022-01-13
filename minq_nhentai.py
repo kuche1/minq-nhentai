@@ -320,8 +320,8 @@ def receive_raw(url, silent=False):
         raise Exception_net_page_not_found()
     elif sex == (429, 'Too Many Requests'):
         if not silent: print_tmp(f'Too many requests, server refused connection, retrying in {NET_TOO_MANY_REQUESTS_SLEEP} seconds')
-            time.sleep(NET_TOO_MANY_REQUESTS_SLEEP)
-            return receive_raw(url)
+        time.sleep(NET_TOO_MANY_REQUESTS_SLEEP)
+        return receive_raw(url)
     else:
         raise Exception_net_unknown(f'{url} {page.status_code} {page.reason}')
 

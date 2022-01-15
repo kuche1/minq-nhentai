@@ -126,12 +126,16 @@ class Hentai:
         s.image_print(THUMB_NAME)
 
     def contains_tag(s, tag):
+        if len(s.tags) == 0:
+            return True
         for t in s.tags:
             if tag == t.name:
                 return True
         return False
 
     def contains_language(s, lang):
+        if len(s.languages) == 0:
+            return True
         for l in s.languages:
             if lang == l.name:
                 return True
@@ -155,7 +159,9 @@ class Hentai:
             finally:
                 s.downloading_pages_in_background = False
 
-        assert s.downloading_pages_in_background == False
+        if s.downloading_pages_in_background:
+            print('Already downloading')
+            return
         s.downloading_pages_in_background = True
         threading.Thread(target=download_all_pages).start()
 
@@ -427,6 +433,7 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
     CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n'])
     CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
     CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
+    CMDS.append(CMD_DOWNLOAD := ['download hentai', 'download', 'd'])
 
     assert type(required_tags) in (list, tuple)
     assert type(required_language) in (str, type(None))
@@ -515,7 +522,7 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
                     break
 
             if required_artist != None:
-                if not hentai.contains_artist(required_artist):
+                if not hentai.contains_artist(required_artist): # TODO this doesn't exist
                     find_new_hentai = f'missing artist: {required_artist}'
 
             for tag in required_tags:
@@ -555,7 +562,9 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
                 ind -= 1
             elif c in CMD_READ:
                 hentai.reading_loop()
-            
+            elif c in CMD_DOWNLOAD:
+                hentai.download_in_background()
+
             else:
                 print(f'Unknown command: {c}')
                 print('List of available commands:')

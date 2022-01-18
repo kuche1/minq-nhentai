@@ -2,17 +2,13 @@
 
 # TODO
 # include recommended hentai
-# automatically download hole hentai
-# cache metadata
 # typo check in menus
 # add most popular
-# add search by name
 # allow running multiple instances
 # add hentai blacklist
 # TODO MBY
 # implement normal menu mechanism
 # fetch tags from https://nhentai.net/tags/
-# check for internet connection
 
 import argparse
 import requests
@@ -40,9 +36,6 @@ URL_LANG = URL_INDEX + r'language/{lang}/'
 URL_ARTIST = URL_INDEX + r'artist/{artist}/'
 
 SOUP_PARSER = 'lxml'
-
-THUMB_NAME = 'thumb'
-DONE_POSTFIX = '.done'
 
 class Exception_net_page_not_found(Exception): pass
 class Exception_net_unknown(Exception): pass
@@ -111,26 +104,29 @@ class Hentai:
                 return True
         return False
 
+    download_in_background_tlock = threading.Lock()
     def download_in_background(s):
+
+        if s.download_in_background_tlock.acquire(False) == False:
+            print('Warning: Pages are already being downloaded in the backgroudn. Either this is a bug or you fucked around too much')
+            return
 
         def download_all_pages():
             nonlocal s
             try:
                 for page_num in range(1, s.pages+1):
-                    if s.downloading_pages_in_background == False:
+                    if s.download_in_background_tlock.locked() == False:
                         break
                     s.image_cache(s.get_page_image_url(page_num))
             finally:
-                s.downloading_pages_in_background = False
+                if s.download_in_background_tlock.locked():
+                    s.download_in_background_tlock.release()
 
-        if s.downloading_pages_in_background:
-            print('Already downloading')
-            return
-        s.downloading_pages_in_background = True
         threading.Thread(target=download_all_pages).start()
 
     def stop_downloading_in_background(s):
-        s.downloading_pages_in_background = False
+        if s.download_in_background_tlock.locked():
+            s.download_in_background_tlock.release()
 
     def get_page_image_url(s, page_num):
         url = URL_READ.format(id=s.id_, page=page_num)

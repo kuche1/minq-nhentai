@@ -21,7 +21,7 @@ import io
 import time
 import threading
 
-sys.path.insert(0, '../minq_storage/minq_storage')
+sys.path.insert(0, '../minq_storage/minq_storage') # WTF why does this work
 import minq_storage as ms # TODO
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3

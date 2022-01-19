@@ -21,8 +21,9 @@ import io
 import time
 import threading
 
-sys.path.insert(0, '../minq_storage/minq_storage') # WTF why does this work
-import minq_storage as ms # TODO
+# debug stuff
+sys.path.insert(0, '../minq-storage/minq-storage')
+ms = __import__('minq-storage')
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3
 WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2

@@ -20,9 +20,6 @@ import sys
 import io
 import time
 import threading
-
-# debug stuff
-sys.path.insert(0, '../minq-storage/minq-storage')
 ms = __import__('minq-storage')
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3
@@ -277,10 +274,8 @@ def alert(msg=''):
 
 def receive_raw(url, silent=False, allow_cached=False):
 
-    recv_fnc = ms.net_read if allow_cached else ms.net_read_fresh
-
     try:
-        return recv_fnc(url)
+        return ms.net_read(url, fresh=not allow_cached)
     except ms.Exception_net_page_not_ok as err:
         page = err.page
 

@@ -22,6 +22,12 @@ import time
 import threading
 ms = __import__('minq-storage')
 
+DEBUG = True
+
+if DEBUG:
+    sys.path.insert(0, '../minq-storage/minq-storage')
+    ms = __import__('__init__')
+
 NET_TOO_MANY_REQUESTS_SLEEP = 3
 WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2
 
@@ -83,7 +89,7 @@ class Hentai:
         s.print_thumb()
 
     def print_thumb(s):
-        ms.net_cache(s.thumb_url)
+        ms.net_cache(s.thumb_url, fresh=False)
         s.image_print(s.thumb_url)
 
     def contains_tag(s, tag):

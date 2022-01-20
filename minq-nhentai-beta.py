@@ -22,7 +22,7 @@ import time
 import threading
 ms = __import__('minq-storage')
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     sys.path.insert(0, '../minq-storage/minq-storage')

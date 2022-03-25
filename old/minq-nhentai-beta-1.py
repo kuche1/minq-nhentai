@@ -20,17 +20,13 @@ import sys
 import io
 import time
 import threading
-import minq_caching_thing
-import tempfile
+ms = __import__('minq-storage')
 
 DEBUG = False
 if DEBUG:
-    sys.path.insert(0, '../minq-caching-thing/minq_caching_thing')
-    minq_caching_thing = __import__('__init__')
+    sys.path.insert(0, '../minq-storage/minq-storage')
+    ms = __import__('__init__')
     del sys.path[0]
-
-mct = minq_caching_thing.Minq_caching_thing()
-mct = minq_caching_thing.Minq_caching_thing()
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3
 WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2
@@ -65,21 +61,23 @@ class Hentai:
         s.groups = groups
 
         s.stop_downloading_in_background()
-        
-        s.page_urls = [None] * pages
-        
+
     def __eq__(s, other):
         if type(s) != type(other):
             return False
         return s.id_ == other.id_
 
-    #def image_cached(s, url):
-    #    return ms.net_cached(url)
-    def image_path(s, url):
-        return mct.get_url(url, return_path=True)
+    def image_cached(s, url):
+        return ms.net_cached(url)
 
     def image_cache(s, img_url, silent=False, allow_cached=True):
         receive_raw(img_url, silent=silent, allow_cached=allow_cached)
+
+    def image_print(s, url):
+        assert s.image_cached(url)
+        path = ms.net_cached_path(url)
+        cmd = shlex.join(['viu', path])
+        output = subprocess.run(cmd, shell=True, check=True, capture_output=False)
 
     def show(s):
         print(f'Title: {s.title}')
@@ -91,8 +89,8 @@ class Hentai:
         s.print_thumb()
 
     def print_thumb(s):
-        path = receive(s.thumb_url, silent=True, allow_cached=True, return_path=True)
-        image_print(path)
+        ms.net_cache(s.thumb_url, fresh=False)
+        s.image_print(s.thumb_url)
 
     def contains_tag(s, tag):
         if len(s.tags) == 0:
@@ -134,23 +132,13 @@ class Hentai:
         if s.download_in_background_tlock.locked():
             s.download_in_background_tlock.release()
 
-    get_page_image_url_tlock = threading.Lock()
     def get_page_image_url(s, page_num):
-        s.get_page_image_url_tlock.acquire()
-        try:
-            cached = s.page_urls[page_num-1]
-            if cached != None:
-                return cached
-    
-            url = URL_READ.format(id=s.id_, page=page_num)
-            data = receive(url, silent=True)
-    
-            soup = bs4.BeautifulSoup(data, SOUP_PARSER)
-            link = soup.find(id='image-container').img['src']
-            s.page_urls[page_num-1] = link
-            return link
-        finally:
-            s.get_page_image_url_tlock.release()
+        url = URL_READ.format(id=s.id_, page=page_num)
+        data = receive(url, silent=True)
+
+        soup = bs4.BeautifulSoup(data, SOUP_PARSER)
+        link = soup.find(id='image-container').img['src']
+        return link
 
     def reading_loop(s):
 
@@ -167,16 +155,16 @@ class Hentai:
 
             image_link = s.get_page_image_url(page_num)
 
-            if (image_path := s.image_path(image_link)) == None:
+            if not s.image_cached(image_link):
                 print_tmp('Downloading...')
                 try:
-                    while (image_path := s.image_path(image_link)) == None:
+                    while not s.image_cached(image_link):
                         time.sleep(WAIT_FOR_PAGE_DOWNLOAD_SLEEP)
                 except KeyboardInterrupt:
                     break
 
             print(f'Page: {page_num} / {s.pages}')
-            image_print(image_path)
+            s.image_print(image_link)
 
             c = input('>> ', 'q')
             if c == '':
@@ -286,37 +274,16 @@ def print_tmp(msg):
 
     _print_tmp_lock.release()
 
-def image_print(path):
-    cmd = shlex.join(['viu', path])
-    output = subprocess.run(cmd, shell=True, check=True, capture_output=False)
-
 def alert(msg=''):
     print(msg)
     input('PRESS ENTER TO CONITNUE', -1)
 
-def receive_raw(url, silent=False, allow_cached=False, return_path=False):
+def receive_raw(url, silent=False, allow_cached=False):
+
     try:
-        if allow_cached:
-            cont = mct.get_url(url, read_mode='b', return_path=return_path)
-            if cont != None:
-                return cont
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0'}
-        page = requests.get(url, headers=headers)
-        if page.ok:
-            cont = page.content
-            mct.cache_url(url, cont)
-            if return_path:
-                with tempfile.NamedTemporaryFile(mode='wb', delete=False) as f:
-                    f.write(cont)
-                    return f.name.encode()
-            else:
-                return cont
-    except requests.exceptions.ConnectionError: # no internet (or TODO)
-        cont = mct.get_url(url, read_mode='b', return_path=return_path) # TODO please no duplicates
-        if cont == None:
-            assert False, 'no internet connection'
-        else:
-            return cont
+        return ms.net_read(url, fresh=not allow_cached)
+    except ms.Exception_net_page_not_ok as err:
+        page = err.page
 
     match (page.status_code, page.reason):
         case (404, 'Not Found'):

@@ -20,7 +20,7 @@ import sys
 import io
 import time
 import threading
-import minq_caching_thing
+import minq_caching_thing; mct = minq_caching_thing.Minq_caching_thing()
 import tempfile
 
 DEBUG = False
@@ -28,9 +28,6 @@ if DEBUG:
     sys.path.insert(0, '../minq-caching-thing/minq_caching_thing')
     minq_caching_thing = __import__('__init__')
     del sys.path[0]
-
-mct = minq_caching_thing.Minq_caching_thing()
-mct = minq_caching_thing.Minq_caching_thing()
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3
 WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2

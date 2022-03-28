@@ -23,12 +23,6 @@ import threading
 import minq_caching_thing; mct = minq_caching_thing.Minq_caching_thing()
 import tempfile
 
-DEBUG = False
-if DEBUG:
-    sys.path.insert(0, '../minq-caching-thing/minq_caching_thing')
-    minq_caching_thing = __import__('__init__')
-    del sys.path[0]
-
 NET_TOO_MANY_REQUESTS_SLEEP = 3
 WAIT_FOR_PAGE_DOWNLOAD_SLEEP = 0.2
 
@@ -70,8 +64,6 @@ class Hentai:
             return False
         return s.id_ == other.id_
 
-    #def image_cached(s, url):
-    #    return ms.net_cached(url)
     def image_path(s, url):
         return mct.get_url(url, return_path=True)
 
@@ -436,8 +428,9 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
     CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
     CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n'])
     CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
-    CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
     CMDS.append(CMD_DOWNLOAD := ['download hentai', 'download', 'd'])
+    CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
+    CMDS.append(CMD_IGNORE := ['ignore hentai', 'ignore', 'ign'])
 
     assert type(required_tags) in (list, tuple)
     assert type(required_language) in (str, type(None))

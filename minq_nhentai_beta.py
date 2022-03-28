@@ -33,8 +33,10 @@ URL_READ = URL_INDEX + r'g/{id}/{page}/'
 URL_TAG = URL_INDEX + r'tag/{tag}/'
 URL_LANG = URL_INDEX + r'language/{lang}/'
 URL_ARTIST = URL_INDEX + r'artist/{artist}/'
-
 SOUP_PARSER = 'lxml'
+
+SETTINGS_DIR = os.path.expanduser('~/.config/minq-nhentai/settings/')
+BLACKLIST_DIR = os.path.join(SETTINGS_DIR, 'blacklisted')
 
 class Exception_net_page_not_found(Exception): pass
 class Exception_net_unknown(Exception): pass
@@ -98,6 +100,22 @@ class Hentai:
             if lang == l.name:
                 return True
         return False
+    
+    def is_blacklisted(s):
+        id_ = str(s.id_)
+        for dir_,fols,fils in os.walk(BLACKLIST_DIR):
+            return id_ in fils
+    
+    def set_blacklisted(s, yes):
+        id_ = str(s.id_)
+        path = os.path.join(BLACKLIST_DIR, id_)
+        if yes: # move to blacklist
+            if not os.path.isdir(BLACKLIST_DIR):
+                os.makedirs(BLACKLIST_DIR)
+            with open(path, 'w') as f:
+                pass
+        else: # remove from blacklist
+            os.remove(path)
 
     download_in_background_tlock = threading.Lock()
     def download_in_background(s):
@@ -430,7 +448,7 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
     CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
     CMDS.append(CMD_DOWNLOAD := ['download hentai', 'download', 'd'])
     CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
-    CMDS.append(CMD_IGNORE := ['ignore hentai', 'ignore', 'ign'])
+    CMDS.append(CMD_IGNORE := ['ignore hentai', 'ignore', 'ign', 'block hentai', 'block', 'blk'])
 
     assert type(required_tags) in (list, tuple)
     assert type(required_language) in (str, type(None))
@@ -510,26 +528,38 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
                 alert('This was the last hentai')
             ind = len(hentais)-1
         else:
-
+            
             find_new_hentai = False
 
-            for h in hentais:
-                if h == hentai:
-                    find_new_hentai = 'duplicate'
+            for _ in range(1):
+
+                for h in hentais:
+                    if h == hentai:
+                        find_new_hentai = 'duplicate'
+                        break
+                if find_new_hentai:
                     break
 
-            if required_artist != None:
-                if not hentai.contains_artist(required_artist): # TODO this doesn't exist
-                    find_new_hentai = f'missing artist: {required_artist}'
-
-            for tag in required_tags:
-                if not hentai.contains_tag(tag):
-                    find_new_hentai = f'missing tag: {tag}'
+                if required_artist != None:
+                    if not hentai.contains_artist(required_artist): # TODO this doesn't exist
+                        find_new_hentai = f'missing artist: {required_artist}'
+                        break
+    
+                for tag in required_tags:
+                    if not hentai.contains_tag(tag):
+                        find_new_hentai = f'missing tag: {tag}'
+                        break
+                if find_new_hentai:
                     break
 
-            if required_language != None:
-                if not hentai.contains_language(required_language):
-                    find_new_hentai = f'missing langiage: {required_language}'
+                if required_language != None:
+                    if not hentai.contains_language(required_language):
+                        find_new_hentai = f'missing langiage: {required_language}'
+                        break
+    
+                if hentai.is_blacklisted():
+                    find_new_hentai = 'blacklisted'
+                    break
 
             if find_new_hentai:
                 print_tmp(f'Hentai rejected (reason: {find_new_hentai}), searching for another one...')
@@ -552,7 +582,6 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
 
             if c == '':
                 c = CMD_NEXT[0]
-
             if c in CMD_QUIT:
                 running = False
             elif c in CMD_NEXT:
@@ -563,7 +592,9 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
                 hentai.reading_loop()
             elif c in CMD_DOWNLOAD:
                 hentai.download_in_background()
-
+            elif c in CMD_IGNORE:
+                hentai.set_blacklisted(True)
+                del hentais[ind]
             else:
                 print(f'Unknown command: {c}')
                 print('List of available commands:')

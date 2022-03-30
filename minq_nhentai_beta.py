@@ -85,6 +85,14 @@ class Hentai:
         path = receive(s.thumb_url, silent=True, allow_cached=True, return_path=True)
         image_print(path)
 
+    def contains_artist(s, artist):
+        if len(s.tags) == 0:
+            return True
+        for a in s.artists:
+            if artist == a.name:
+                return True
+        return False
+
     def contains_tag(s, tag):
         if len(s.tags) == 0:
             return True
@@ -340,12 +348,27 @@ def receive_raw(url, silent=False, allow_cached=False, return_path=False):
 def receive(*a, **kw):
     return receive_raw(*a, **kw).decode()
 
-def does_page_exist(url):
+def get_page_tag_count(url):
     try:
-        receive(url)
+        cont = receive(url)
     except Exception_net_page_not_found:
-        return False
-    return True
+        return 0
+    soup = bs4.BeautifulSoup(cont, SOUP_PARSER)
+    count = soup.find(class_='count').text
+    count = count.lower()
+    if count.endswith('m'):
+        count = count[:-1] + '0'*6
+    elif count.endswith('k'):
+        count = count[:-1] + '0'*3
+
+    try:
+        count = int(count)
+    except ValueError:
+        print('THIS IS A BUG, PLEASE REPORT TO THE DEVELOPER')
+        print(f'debug info: count is {count}')
+        input('PRESS ENTER TO CONTINUE', 0)
+        count = 1
+    return count
 
 def scrape_tag_container(container):
 
@@ -456,47 +479,47 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
     ## filtering
 
     url_page = None
+    url_page_tag_count = float('inf')
 
     # search
 
     if search_term != None:
         assert url_page == None
         url_page = URL_SEARCH.format(search=search_term)
+        url_page_tag_count = -1
 
     # artist
 
     if required_artist != None:
-        if not does_page_exist(URL_ARTIST.format(artist=required_artist)):
+        c = get_page_tag_count(URL_ARTIST.format(artist=required_artist))
+        if c == 0:
             print(f"Artist doesn't exist: {required_artist}")
             sys.exit(1)
-
-        if url_page == None:
+        elif c < url_page_tag_count:
+            url_page_tag_count = c
             url_page = URL_ARTIST.format(artist=required_artist)
-            required_artist = None
 
     # tags
 
     for tag in required_tags:
-        if not does_page_exist(URL_TAG.format(tag=tag)):
+        c = get_page_tag_count(URL_TAG.format(tag=tag))
+        if c == 0:
             print(f"Tag doesn't exist: {tag}")
             sys.exit(1)
-
-    if url_page == None:
-        if len(required_tags) != 0:
-            # TODO select the tag with the least popularity
-            url_page = URL_TAG.format(tag=required_tags[0])
-            required_tags = required_tags[1:]
+        elif c < url_page_tag_count:
+            url_page_tag_count = c
+            url_page = URL_TAG.format(tag=tag)
 
     # lang
 
     if required_language != None:
-        if not does_page_exist(URL_LANG.format(lang=required_language)):
+        c = get_page_tag_count(URL_LANG.format(lang=required_language))
+        if c == 0:
             print(f"Language doesn't exist: {required_language}")
             sys.exit(1)
-
-        if url_page == None:
+        elif c < url_page_tag_count:
+            url_page_tag_count = c
             url_page = URL_LANG.format(lang=required_language)
-            required_language = None
 
     # if no filters
 

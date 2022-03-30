@@ -525,6 +525,8 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
 
     if url_page == None:
         url_page = URL_INDEX
+    else:
+        print(f'DEBUG: selected url "{url_page}" with count "{url_page_tag_count}"')
 
     # TODO this is not perfect
     if '?' in url_page: url_page += '&'

@@ -1,7 +1,7 @@
-# minq_nhentai
+# minq-nhentai
 
 ## Install
-paru -S minq_nhentai-git
+paru -S minq-nhentai-git
 
 ## AUR link
-https://aur.archlinux.org/packages/minq_nhentai-git/
+https://aur.archlinux.org/packages/minq-nhentai-git/

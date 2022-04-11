@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 
+# TODO IMPORTANT
+# fix space in tag name
+
 # TODO
 # include recommended hentai
 # typo check in menus

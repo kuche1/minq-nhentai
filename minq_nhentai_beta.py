@@ -384,14 +384,19 @@ def scrape_tag_container(container):
     tag_counts = [t.find(class_='count').text for t in tags]
 
     tag_links = []
+    tag_link_names = []
     for t in tags:
         link = t['href']
         if link.startswith('/'): link = link[1:]
         link = URL_INDEX + link
         tag_links.append(link)
 
-    assert len(tags) == len(tag_names) == len(tag_counts) == len(tag_links)
-    return meta, tag_names, tag_links, tag_counts
+        link_name = link.split('/')[-2]
+        tag_link_names.append(link_name)
+
+    assert len(tags) == len(tag_names) == len(tag_counts) == len(tag_links) == len(tag_link_names)
+    # we are returning the tag link name instead of the real name
+    return meta, [tag_link_names, tag_names][0], tag_links, tag_counts
 
 def scrape_hentais(url_page):
     page_num = 0

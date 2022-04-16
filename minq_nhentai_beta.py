@@ -20,7 +20,7 @@ import sys
 import io
 import time
 import threading
-import minq_caching_thing; mct = minq_caching_thing.Minq_caching_thing()
+import minq_caching_thing; mct = minq_caching_thing.Minq_caching_thing() # paru -S python-minq-caching-thing-git
 import tempfile
 
 NET_TOO_MANY_REQUESTS_SLEEP = 3

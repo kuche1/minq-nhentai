@@ -173,7 +173,7 @@ class Hentai:
 
         CMDS = []
         CMDS.append(CMD_QUIT := ['quit', 'q', 'exit', 'e'])
-        CMDS.append(CMD_NEXT := ['next page', 'next', 'n'])
+        CMDS.append(CMD_NEXT := ['next page', 'next', 'n', ''])
         CMDS.append(CMD_PREV := ['prevoius page', 'prev', 'p', 'back', 'b'])
         CMDS.append(CMD_PAGE := ['go to page', 'page', 'go to', 'goto', 'go', 'g'])
 
@@ -194,8 +194,6 @@ class Hentai:
             image_print(image_path)
 
             c = input('>> ', 'q')
-            if c == '':
-                c = CMD_NEXT[0]
 
             if c in CMD_QUIT:
                 break
@@ -472,7 +470,7 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
 
     CMDS = []
     CMDS.append(CMD_QUIT := ['quit', 'q', 'exit'])
-    CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n'])
+    CMDS.append(CMD_NEXT := ['next hentai', 'next', 'n', ''])
     CMDS.append(CMD_PREV := ['previous hentai', 'previous', 'prev', 'p'])
     CMDS.append(CMD_DOWNLOAD := ['download hentai', 'download', 'd'])
     CMDS.append(CMD_READ := ['read hentai', 'read', 'r', 'enjoy', 'cum', 'wank', 'sex'])
@@ -610,8 +608,6 @@ def interactive_hentai_enjoyment(search_term=None, required_tags=None, required_
         
             c = input('> ', CMD_QUIT[0])
 
-            if c == '':
-                c = CMD_NEXT[0]
             if c in CMD_QUIT:
                 running = False
             elif c in CMD_NEXT:

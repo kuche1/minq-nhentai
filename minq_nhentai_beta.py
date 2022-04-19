@@ -20,6 +20,7 @@ import sys
 import io
 import time
 import threading
+#sys.path.insert(0, '../minq-caching-thing')
 import minq_caching_thing; mct = minq_caching_thing.Minq_caching_thing() # paru -S python-minq-caching-thing-git
 import tempfile
 

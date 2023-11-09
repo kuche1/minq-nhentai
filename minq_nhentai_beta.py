@@ -12,7 +12,7 @@
 
 import argparse
 import requests
-import bs4 # sudo pacman -S --needed python-beautifulsoup4
+import bs4 # sudo pacman -S --needed python-beautifulsoup4 # sudo apt install python3-bs4
 import shlex
 import subprocess
 import os
@@ -20,7 +20,7 @@ import sys
 import io
 import time
 import threading
-#sys.path.insert(0, '../minq-caching-thing')
+sys.path.insert(0, '../minq-caching-thing') # debug
 import minq_caching_thing; mct = minq_caching_thing.Minq_caching_thing() # paru -S python-minq-caching-thing-git
 import tempfile
 
